@@ -153,14 +153,10 @@ for epoch in range(EPOCH):  # Number of epochs
 # Switch the model to evaluation mode
 model.eval()
 
-# Initialize variables to store the total loss and the number of correct predictions
 total_loss = 0
 total_correct = 0
 total_labels = 0
 
-# Initialize a confusion matrix if you plan to calculate metrics like F1-score later
-
-# No need to compute gradients during testing
 with torch.no_grad():
     for sentences, labels in test_loader:
         sentences = sentences.long()
