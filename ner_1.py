@@ -1,12 +1,17 @@
+import nltk
 import json
-import numpy as np
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from torch.utils.data import DataLoader, Dataset
 from torch.nn.utils.rnn import pad_sequence
 
+EPOCH = 20
 dataset = json.loads(open('data/ner/merged_5k.json', 'r').read())
-
-from nltk.tokenize import word_tokenize
-import nltk
 
 # Download the Punkt tokenizer models
 nltk.download('punkt')
@@ -48,10 +53,6 @@ def preprocess_data(dataset):
 # Preprocess the data
 preprocessed_data = preprocess_data(dataset)
 
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset, DataLoader
-import torch
 
 all_tokens = [token for sample, labels in preprocessed_data for token in sample]
 all_labels = [label for sample, labels in preprocessed_data for label in labels]
@@ -98,11 +99,6 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn
 val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, collate_fn=collate_fn)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, collate_fn=collate_fn)
 
-# Display the first batch of training data
-
-import torch.nn.functional as F
-import torch.nn as nn
-
 class SimpleLSTM(nn.Module):
     def __init__(self, vocab_size, embed_size, hidden_size, output_size):
         super(SimpleLSTM, self).__init__()
@@ -120,15 +116,13 @@ class SimpleLSTM(nn.Module):
         return tag_scores
 
 
-# Instantiate the model
 model = SimpleLSTM(vocab_size=len(vocab), embed_size=100, hidden_size=100, output_size=len(label_encoder.classes_))
 
-# Define a loss function and optimizer
 loss_function = nn.NLLLoss(ignore_index=-100)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 # Training loop
 
-for epoch in range(20):  # Number of epochs
+for epoch in range(EPOCH):  # Number of epochs
     for sentences, labels in train_loader:
         sentences = sentences.long()
         labels = labels.view(-1).long()  # Reshape the labels to match the shape of the data
@@ -194,6 +188,3 @@ accuracy = total_correct / total_labels
 print(f'Test Loss: {average_loss}')
 print(f'Test Accuracy: {accuracy * 100:.2f}%')
 
-# If needed, you can calculate other metrics (like F1-score) using the confusion matrix
-# from sklearn.metrics import f1_score, classification_report
-# print(classification_report(labels.view(-1).numpy(), predictions.view(-1).numpy(), target_names=label_encoder.classes_))
